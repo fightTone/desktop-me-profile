@@ -7,3 +7,4 @@ public/files/Videos/*
 public/files/Downloads/*
 public/files/Desktop/*
 public/files/Documents/*
+.dockerignore
