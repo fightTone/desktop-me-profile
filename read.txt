@@ -1,0 +1,10 @@
+# modify with the folder you want to add first
+mkdir -p public/files/Downloads
+mkdir -p public/files/Desktop
+mkdir -p public/files/Pictures
+mkdir -p public/files/Videos
+mkdir -p public/files/Music
+
+
+# run the command below to let the items in the file_system folders will appear
+npm run generate-file-list

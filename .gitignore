@@ -1,0 +1,9 @@
+node_modules/
+dist/
+public/files/Pictures/*
+public/files/Docments/*
+public/files/Music/*
+public/files/Videos/*
+public/files/Downloads/*
+public/files/Desktop/*
+public/files/Documents/*
