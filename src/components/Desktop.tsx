@@ -39,6 +39,12 @@ const WindowsContainer = styled.div`
   pointer-events: all;
 `;
 
+interface WindowState {
+  position: { x: number; y: number };
+  dimensions: { width: number; height: number };
+  isFullscreen: boolean;
+}
+
 interface WindowData {
   id: string;
   type: 'terminal' | 'filesystem' | 'browser' | 'settings' | 'viewer';
@@ -48,6 +54,7 @@ interface WindowData {
   zIndex: number;
   width: number;
   height: number;
+  state?: WindowState;  // Add this to store window state
 }
 
 const Desktop: React.FC = () => {
@@ -82,6 +89,14 @@ const Desktop: React.FC = () => {
     }
   };
 
+  const saveWindowState = (id: string, state: WindowState) => {
+    setWindows(windows.map(window => 
+      window.id === id 
+        ? { ...window, state }
+        : window
+    ));
+  };
+
   const spawnWindow = (type: 'terminal' | 'filesystem' | 'browser' | 'settings') => {
     const dimensions = getWindowDimensions(type);
     const newWindow: WindowData = {
@@ -90,7 +105,18 @@ const Desktop: React.FC = () => {
       title: type.charAt(0).toUpperCase() + type.slice(1),
       isMinimized: false,
       zIndex: maxZIndex + 1,
-      ...dimensions
+      ...dimensions,
+      state: {
+        position: {
+          x: Math.random() * (window.innerWidth - dimensions.width) / 2,
+          y: 30 + Math.random() * (window.innerHeight - dimensions.height - 60) / 2
+        },
+        dimensions: {
+          width: dimensions.width,
+          height: dimensions.height
+        },
+        isFullscreen: false
+      }
     };
     setMaxZIndex(prev => prev + 1);
     setActiveWindowId(newWindow.id);
@@ -143,6 +169,8 @@ const Desktop: React.FC = () => {
             zIndex={window.zIndex}
             defaultWidth={window.width}
             defaultHeight={window.height}
+            initialState={window.state}
+            onStateChange={(state) => saveWindowState(window.id, state)}
           >
             {window.type === 'terminal' && <Terminal />}
             {window.type === 'filesystem' && (

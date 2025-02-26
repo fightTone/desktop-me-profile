@@ -159,6 +159,12 @@ const DragOverlay = styled.div<{ isVisible: boolean }>`
   }
 `;
 
+interface WindowState {
+  position: { x: number; y: number };
+  dimensions: { width: number; height: number };
+  isFullscreen: boolean;
+}
+
 interface WindowProps {
   children: React.ReactNode;
   title: string;
@@ -169,6 +175,8 @@ interface WindowProps {
   zIndex?: number;
   defaultWidth?: number;
   defaultHeight?: number;
+  initialState?: WindowState;
+  onStateChange?: (state: WindowState) => void;
 }
 
 const Window: React.FC<WindowProps> = ({ 
@@ -180,19 +188,22 @@ const Window: React.FC<WindowProps> = ({
   isActive = false,
   zIndex = 1,
   defaultWidth = 600,
-  defaultHeight = 400
+  defaultHeight = 400,
+  initialState,
+  onStateChange,
 }) => {
   const getInitialPosition = () => ({
     x: Math.random() * (window.innerWidth - defaultWidth) / 2,
     y: TOPBAR_HEIGHT + Math.random() * (window.innerHeight - defaultHeight - TOPBAR_HEIGHT - TASKBAR_HEIGHT) / 2
   });
 
-  const [dimensions, setDimensions] = useState({ 
-    width: defaultWidth, 
-    height: defaultHeight 
-  });
-  const [position, setPosition] = useState(getInitialPosition());
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dimensions, setDimensions] = useState(
+    initialState?.dimensions || { width: defaultWidth, height: defaultHeight }
+  );
+  const [position, setPosition] = useState(
+    initialState?.position || getInitialPosition()
+  );
+  const [isFullscreen, setIsFullscreen] = useState(initialState?.isFullscreen || false);
   const [preFullscreenState, setPreFullscreenState] = useState<{
     position: { x: number; y: number };
     dimensions: { width: number; height: number };
@@ -307,6 +318,14 @@ const Window: React.FC<WindowProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isActive]);
+
+  useEffect(() => {
+    onStateChange?.({
+      position,
+      dimensions,
+      isFullscreen
+    });
+  }, [position, dimensions, isFullscreen]);
 
   const windowContent = (
     <WindowContainer 
