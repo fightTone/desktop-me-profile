@@ -24,10 +24,10 @@ const WindowContainer = styled.div<{
   isFullscreen: boolean;
 }>`
   position: absolute;
-  background: ${props => props.isActive ? 'rgba(32, 32, 32, 0.95)' : 'rgba(40, 40, 40, 0.95)'};
-  backdrop-filter: blur(20px);
-  border: 1px solid ${props => props.isActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
-  border-radius: ${props => props.isFullscreen ? '0' : '4px'};
+  background: ${props => props.isActive ? 'rgba(28, 28, 32, 0.95)' : 'rgba(35, 35, 40, 0.95)'};
+  backdrop-filter: blur(30px);
+  border: 1px solid ${props => props.isActive ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)'};
+  border-radius: ${props => props.isFullscreen ? '0' : '12px'};
   width: ${props => props.isFullscreen ? '100vw' : `${props.width}px`};
   height: ${props => props.isFullscreen ? `calc(100vh - ${TOPBAR_HEIGHT}px)` : `${props.height}px`};
   min-width: ${props => props.isFullscreen ? '100vw' : '200px'};
@@ -38,8 +38,8 @@ const WindowContainer = styled.div<{
   flex-direction: column;
   transition: all 0.3s ease-out;
   box-shadow: ${props => props.isActive 
-    ? '0 8px 32px rgba(0,0,0,0.3), 0 0 2px rgba(255,255,255,0.1)' 
-    : '0 4px 16px rgba(0,0,0,0.2)'};
+    ? '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)' 
+    : '0 8px 24px rgba(0, 0, 0, 0.2)'};
   transition: background 0.2s, border 0.2s, box-shadow 0.2s;
   z-index: ${props => props.zIndex};
   animation: ${fadeIn} 0.2s ease-out;
@@ -47,20 +47,22 @@ const WindowContainer = styled.div<{
 `;
 
 const TitleBar = styled.div<{ isActive: boolean }>`
-  background: ${props => props.isActive ? 'rgba(60, 60, 60, 0.95)' : 'rgba(50, 50, 50, 0.95)'};
-  padding: 8px 12px;
-  height: 32px;
+  background: ${props => props.isActive ? 'rgba(50, 50, 55, 0.95)' : 'rgba(45, 45, 50, 0.95)'};
+  padding: 12px 16px;
+  height: 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: move;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
   flex-shrink: 0;
   transition: background 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(30px);
 
   &:hover {
-    background: ${props => props.isActive ? '#585858' : '#4a4a4a'};
+    background: ${props => props.isActive ? 'rgba(55, 55, 60, 0.95)' : 'rgba(50, 50, 55, 0.95)'};
   }
 `;
 
@@ -71,17 +73,27 @@ const WindowTitle = styled.div<{ isActive: boolean }>`
   color: ${props => props.isActive ? '#fff' : '#ccc'};
   font-weight: ${props => props.isActive ? '500' : 'normal'};
   transition: color 0.2s;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
 `;
 
 const WindowContent = styled.div`
   flex: 1;
   overflow: auto;
   position: relative;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  background: rgba(28, 28, 32, 0.6);
+  backdrop-filter: blur(30px);
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 4px;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  border-radius: 8px;
 `;
 
 const WindowButton = styled.button<{ variant?: 'close' | 'minimize' | 'fullscreen' }>`
@@ -95,12 +107,12 @@ const WindowButton = styled.button<{ variant?: 'close' | 'minimize' | 'fullscree
   }};
   border: none;
   color: transparent;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   cursor: pointer;
-  opacity: 0.7;
-  transition: all 0.2s;
+  opacity: 0.8;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 
   &::before {
@@ -117,7 +129,7 @@ const WindowButton = styled.button<{ variant?: 'close' | 'minimize' | 'fullscree
 
   &:hover {
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.15);
     color: ${props => props.variant === 'close' ? '#450000' : '#654200'};
   }
 

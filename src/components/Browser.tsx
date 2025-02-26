@@ -1,34 +1,41 @@
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
+import { Icon } from '@iconify/react';
 
 const BrowserContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #fff;
+  background: rgba(32, 32, 32, 0.95);
+  backdrop-filter: blur(20px);
+  color: white;
 `;
 
 const NavBar = styled.div`
   display: flex;
   align-items: center;
-  padding: 8px;
-  background: #333;
+  padding: 8px 12px;
+  background: rgba(48, 48, 48, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   gap: 8px;
 `;
 
 const NavButton = styled.button`
-  background: #444;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
   color: white;
-  padding: 6px 12px;
-  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  transition: all 0.2s;
   
   &:hover {
-    background: #555;
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
   }
   
   &:disabled {
@@ -40,60 +47,74 @@ const NavButton = styled.button`
 const AddressBar = styled.input`
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  background: #222;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
   color: white;
   font-size: 14px;
   
   &:focus {
     outline: none;
-    border-color: #666;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
   }
 `;
 
 const TabBar = styled.div`
   display: flex;
-  background: #282828;
-  padding: 4px 4px 0;
+  background: rgba(40, 40, 40, 0.95);
+  padding: 8px 8px 0;
   gap: 2px;
 `;
 
 const Tab = styled.div<{ active: boolean }>`
   padding: 8px 16px;
-  background: ${props => props.active ? '#333' : '#2a2a2a'};
+  background: ${props => props.active ? 'rgba(48, 48, 48, 0.95)' : 'rgba(40, 40, 40, 0.95)'};
   color: ${props => props.active ? 'white' : '#aaa'};
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  min-width: 100px;
+  min-width: 120px;
   position: relative;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: none;
   
   &:hover {
-    background: ${props => props.active ? '#333' : '#2f2f2f'};
+    background: ${props => props.active ? 'rgba(48, 48, 48, 0.95)' : 'rgba(44, 44, 44, 0.95)'};
   }
 `;
 
-const TabClose = styled.span`
+const TabClose = styled.div`
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   position: absolute;
   right: 8px;
   opacity: 0.7;
-  font-size: 14px;
+  transition: all 0.2s;
+  
   &:hover {
     opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
     color: #ff5f57;
   }
 `;
 
 const NewTabButton = styled(NavButton)`
-  margin: 0;
-  padding: 4px 8px;
   background: transparent;
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+  
   &:hover {
-    background: #444;
+    background: rgba(255, 255, 255, 0.1);
   }
 `;
 
@@ -101,49 +122,53 @@ const IframeContainer = styled.div`
   flex: 1;
   background: white;
   position: relative;
-  overflow: auto;
+  overflow: hidden;
+  border-radius: 0 0 4px 4px;
   display: flex;
   flex-direction: column;
 `;
 
 const StyledIframe = styled.iframe`
   width: 100%;
-  flex: 1;
+  height: 100%;
   border: none;
-  min-height: 0;
+  background: white;
   display: block;
 `;
 
 const BlockedSiteMessage = styled.div`
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
   padding: 20px;
   text-align: center;
-  background: #f5f5f5;
+  background: rgba(32, 32, 32, 0.95);
+  color: white;
 
   h2 {
     margin-bottom: 16px;
-    color: #333;
   }
 
   p {
-    margin-bottom: 16px;
-    color: #666;
+    margin-bottom: 24px;
+    color: #aaa;
   }
 
   a {
-    padding: 10px 20px;
-    background: #2196f3;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.1);
     color: white;
     text-decoration: none;
-    border-radius: 4px;
-    transition: background 0.2s;
+    border-radius: 8px;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
     &:hover {
-      background: #1976d2;
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
     }
   }
 `;
@@ -240,8 +265,9 @@ const Browser: React.FC = () => {
       <StyledIframe
         ref={iframeRef}
         src={activeTab.url}
-        title="browser-content"
-        scrolling="auto"
+        title={activeTab.title}
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+        loading="lazy"
       />
     );
   };
@@ -258,21 +284,27 @@ const Browser: React.FC = () => {
               setCurrentUrl(tab.url);
             }}
           >
-            <span>📄</span>
+            <Icon icon="mdi:web" width="16" />
             {tab.title}
-            <TabClose onClick={(e) => handleCloseTab(e, tab.id)}>×</TabClose>
+            <TabClose onClick={(e) => handleCloseTab(e, tab.id)}>
+              <Icon icon="mdi:close" width="14" />
+            </TabClose>
           </Tab>
         ))}
-        <NewTabButton onClick={handleNewTab}>+</NewTabButton>
+        <NewTabButton onClick={handleNewTab}>
+          <Icon icon="mdi:plus" width="20" />
+        </NewTabButton>
       </TabBar>
       <NavBar>
         <NavButton onClick={() => iframeRef.current?.contentWindow?.history.back()}>
-          ◀
+          <Icon icon="mdi:arrow-left" width="20" />
         </NavButton>
         <NavButton onClick={() => iframeRef.current?.contentWindow?.history.forward()}>
-          ▶
+          <Icon icon="mdi:arrow-right" width="20" />
         </NavButton>
-        <NavButton onClick={handleRefresh}>🔄</NavButton>
+        <NavButton onClick={handleRefresh}>
+          <Icon icon="mdi:refresh" width="20" />
+        </NavButton>
         <form onSubmit={handleUrlSubmit} style={{ flex: 1 }}>
           <AddressBar
             type="text"
