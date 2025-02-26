@@ -57,6 +57,13 @@ interface WindowData {
   state?: WindowState;  // Add this to store window state
 }
 
+const getViewerTitle = (file: FileSystemItem): string => {
+  if (file.contentType?.startsWith('image/')) return `Image - ${file.name}`;
+  if (file.contentType?.startsWith('video/')) return `Video - ${file.name}`;
+  if (file.contentType?.startsWith('audio/')) return `Audio - ${file.name}`;
+  return file.name;
+};
+
 const Desktop: React.FC = () => {
   const [windows, setWindows] = useState<WindowData[]>([]);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
@@ -124,19 +131,31 @@ const Desktop: React.FC = () => {
   };
 
   const spawnViewerWindow = (file: FileSystemItem) => {
-    const newWindow: WindowData = {
-      id: `viewer-${Date.now()}`,
-      type: 'viewer',
-      title: file.name,
-      isMinimized: false,
-      file: file,
-      zIndex: maxZIndex + 1,
-      width: 600,
-      height: 400
-    };
-    setMaxZIndex(prev => prev + 1);
-    setActiveWindowId(newWindow.id);
-    setWindows([...windows, newWindow]);
+    const existingViewer = windows.find(w => 
+      w.type === 'viewer' && w.file?.path === file.path
+    );
+
+    if (existingViewer) {
+      // If viewer already exists, just focus it
+      if (existingViewer.isMinimized) {
+        toggleMinimize(existingViewer.id);
+      }
+      bringToFront(existingViewer.id);
+    } else {
+      const newWindow: WindowData = {
+        id: `viewer-${Date.now()}`,
+        type: 'viewer',
+        title: getViewerTitle(file),  // Use the new title function
+        isMinimized: false,
+        file: file,
+        zIndex: maxZIndex + 1,
+        width: 800,  // Increased default size
+        height: 600
+      };
+      setMaxZIndex(prev => prev + 1);
+      setActiveWindowId(newWindow.id);
+      setWindows([...windows, newWindow]);
+    }
   };
 
   const toggleMinimize = (id: string) => {
@@ -152,6 +171,25 @@ const Desktop: React.FC = () => {
     } else if (settingsWindow.isMinimized) {
       toggleMinimize(settingsWindow.id);
     }
+  };
+
+  const handleMediaNavigation = (windowId: string, newFile: FileSystemItem) => {
+    console.log('Navigating to:', newFile.name);
+    setWindows(windows.map(w =>
+      w.id === windowId 
+        ? { 
+            ...w, 
+            file: newFile, 
+            title: getViewerTitle(newFile),
+            // Ensure state has all required properties
+            state: {
+              position: w.state?.position || { x: 0, y: 0 },
+              dimensions: w.state?.dimensions || { width: w.width, height: w.height },
+              isFullscreen: w.state?.isFullscreen || false
+            }
+          }
+        : w
+    ));
   };
 
   return (
@@ -179,7 +217,13 @@ const Desktop: React.FC = () => {
             {window.type === 'browser' && <Browser />}
             {window.type === 'settings' && <Settings />}
             {window.type === 'viewer' && window.file && (
-              <FileViewer file={window.file} />
+              <FileViewer 
+                file={window.file} 
+                onNavigate={(newFile) => {
+                  console.log('FileViewer navigation triggered'); // Debug log
+                  handleMediaNavigation(window.id, newFile);
+                }}
+              />
             )}
           </Window>
         ))}

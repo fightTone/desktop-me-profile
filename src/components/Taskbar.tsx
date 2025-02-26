@@ -60,7 +60,15 @@ const TaskbarButton = styled.button<{ isActive?: boolean }>`
   }
 `;
 
-const getIconForWindow = (type: string): string => {
+const getIconForWindow = (type: string, contentType?: string): string => {
+  // Handle media files first
+  if (type === 'viewer') {
+    if (contentType?.startsWith('image/')) return 'material-symbols:image';
+    if (contentType?.startsWith('video/')) return 'material-symbols:video-file';
+    if (contentType?.startsWith('audio/')) return 'material-symbols:audio-file';
+  }
+
+  // Handle other window types
   switch (type) {
     case 'terminal':
       return 'codicon:terminal';
@@ -70,15 +78,18 @@ const getIconForWindow = (type: string): string => {
       return 'ri:safari-fill';
     case 'settings':
       return 'ci:settings-filled';
-    case 'viewer':
-      return 'material-symbols:image';
     default:
       return 'ci:file-blank';
   }
 };
 
 interface TaskbarProps {
-  windows: Array<{ id: string; title: string; type: string }>;
+  windows: Array<{ 
+    id: string; 
+    title: string; 
+    type: string; 
+    file?: { contentType?: string } 
+  }>;
   onSpawnWindow: (type: 'terminal' | 'filesystem' | 'browser') => void;
   onWindowClick: (id: string) => void;
 }
@@ -107,7 +118,11 @@ const Taskbar: React.FC<TaskbarProps> = ({ windows, onSpawnWindow, onWindowClick
           onClick={() => onWindowClick(window.id)}
           title={window.title}
         >
-          <Icon icon={getIconForWindow(window.type)} width="24" height="24" />
+          <Icon 
+            icon={getIconForWindow(window.type, window.file?.contentType)} 
+            width="24" 
+            height="24" 
+          />
         </TaskbarButton>
       ))}
     </TaskbarContainer>

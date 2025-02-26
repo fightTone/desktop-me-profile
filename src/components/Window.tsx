@@ -222,6 +222,7 @@ const Window: React.FC<WindowProps> = ({
   } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragPosition, setDragPosition] = useState({ y: 0 });
+  const nodeRef = React.useRef(null); // Add this ref
 
   const onResize = (e: React.SyntheticEvent, { size }: { size: { width: number; height: number } }) => {
     setDimensions(size);
@@ -367,8 +368,9 @@ const Window: React.FC<WindowProps> = ({
     <>
       <DragOverlay isVisible={isDragging && dragPosition.y < 10} />
       <Draggable
+        nodeRef={nodeRef}
         handle=".title-bar"
-        position={isFullscreen ? { x: 0, y: 0 } : position} // Ensure exact positioning
+        position={isFullscreen ? { x: 0, y: 0 } : position}
         onStart={handleDragStart}
         onDrag={handleDrag}
         onStop={handleDragStop}
@@ -376,17 +378,20 @@ const Window: React.FC<WindowProps> = ({
         onMouseDown={onFocus}
         disabled={isFullscreen}
       >
-        {isFullscreen ? windowContent : (
-          <Resizable
-            width={dimensions.width}
-            height={dimensions.height}
-            onResize={onResize}
-            minConstraints={[200, 150]}
-            maxConstraints={[window.innerWidth - 100, window.innerHeight - 130]}
-          >
-            {windowContent}
-          </Resizable>
-        )}
+        <div ref={nodeRef}>
+          {isFullscreen ? windowContent : (
+            <Resizable
+              width={dimensions.width}
+              height={dimensions.height}
+              onResize={onResize}
+              minConstraints={[200, 150]}
+              maxConstraints={[window.innerWidth - 100, window.innerHeight - 130]}
+              handle={<div className="react-resizable-handle" />}
+            >
+              {windowContent}
+            </Resizable>
+          )}
+        </div>
       </Draggable>
     </>
   );
