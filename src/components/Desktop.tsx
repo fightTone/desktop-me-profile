@@ -25,43 +25,18 @@ const DesktopContainer = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);  // Optional: adds a slight dark overlay to make icons more visible
+    background: rgba(0, 0, 0, 0.3);
     pointer-events: none;
   }
 `;
 
-const DesktopIcons = styled.div`
-  padding: 20px;
-  margin-top: 30px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 80px);
-  gap: 20px;
-`;
-
-const DesktopIcon = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-`;
-
-const IconEmoji = styled.span`
-  font-size: 32px;
-  margin-bottom: 8px;
-`;
-
-const IconLabel = styled.span`
-  color: white;
-  font-size: 14px;
-  text-align: center;
-  word-break: break-word;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+const WindowsContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: all;
 `;
 
 interface WindowData {
@@ -69,7 +44,7 @@ interface WindowData {
   type: 'terminal' | 'filesystem' | 'browser' | 'settings' | 'viewer';
   title: string;
   isMinimized: boolean;
-  file?: FileSystemItem;  // Add this for viewer windows
+  file?: FileSystemItem;
   zIndex: number;
   width: number;
   height: number;
@@ -80,7 +55,6 @@ const Desktop: React.FC = () => {
   const [activeWindowId, setActiveWindowId] = useState<string | null>(null);
   const [maxZIndex, setMaxZIndex] = useState(1);
 
-  // Add an initial terminal window when the desktop loads
   useEffect(() => {
     spawnWindow('terminal');
   }, []);
@@ -157,44 +131,31 @@ const Desktop: React.FC = () => {
   return (
     <DesktopContainer>
       <TopPanel onOpenSettings={openSettings} />
-      <DesktopIcons>
-        <DesktopIcon onClick={() => spawnWindow('terminal')}>
-          <IconEmoji>🖥️</IconEmoji>
-          <IconLabel>Terminal</IconLabel>
-        </DesktopIcon>
-        <DesktopIcon onClick={() => spawnWindow('filesystem')}>
-          <IconEmoji>📁</IconEmoji>
-          <IconLabel>Files</IconLabel>
-        </DesktopIcon>
-        <DesktopIcon onClick={() => spawnWindow('browser')}>
-          <IconEmoji>🌐</IconEmoji>
-          <IconLabel>Browser</IconLabel>
-        </DesktopIcon>
-      </DesktopIcons>
-      
-      {windows.map(window => !window.isMinimized && (
-        <Window 
-          key={window.id}
-          title={window.title}
-          onClose={() => setWindows(windows.filter(w => w.id !== window.id))}
-          onMinimize={() => toggleMinimize(window.id)}
-          onFocus={() => bringToFront(window.id)}
-          isActive={window.id === activeWindowId}
-          zIndex={window.zIndex}
-          defaultWidth={window.width}
-          defaultHeight={window.height}
-        >
-          {window.type === 'terminal' && <Terminal />}
-          {window.type === 'filesystem' && (
-            <FileSystem onFileOpen={spawnViewerWindow} />
-          )}
-          {window.type === 'browser' && <Browser />}
-          {window.type === 'settings' && <Settings />}
-          {window.type === 'viewer' && window.file && (
-            <FileViewer file={window.file} />
-          )}
-        </Window>
-      ))}
+      <WindowsContainer>
+        {windows.map(window => !window.isMinimized && (
+          <Window 
+            key={window.id}
+            title={window.title}
+            onClose={() => setWindows(windows.filter(w => w.id !== window.id))}
+            onMinimize={() => toggleMinimize(window.id)}
+            onFocus={() => bringToFront(window.id)}
+            isActive={window.id === activeWindowId}
+            zIndex={window.zIndex}
+            defaultWidth={window.width}
+            defaultHeight={window.height}
+          >
+            {window.type === 'terminal' && <Terminal />}
+            {window.type === 'filesystem' && (
+              <FileSystem onFileOpen={spawnViewerWindow} />
+            )}
+            {window.type === 'browser' && <Browser />}
+            {window.type === 'settings' && <Settings />}
+            {window.type === 'viewer' && window.file && (
+              <FileViewer file={window.file} />
+            )}
+          </Window>
+        ))}
+      </WindowsContainer>
       <Taskbar 
         windows={windows}
         onSpawnWindow={spawnWindow}

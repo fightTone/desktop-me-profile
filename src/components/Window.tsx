@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { Resizable } from 'react-resizable';
 import styled, { keyframes } from 'styled-components';
@@ -24,29 +24,32 @@ const WindowContainer = styled.div<{
   isFullscreen: boolean;
 }>`
   position: absolute;
-  background: ${props => props.isActive ? '#3a3a3a' : '#333'};
-  border: 1px solid ${props => props.isActive ? '#666' : '#444'};
+  background: ${props => props.isActive ? 'rgba(32, 32, 32, 0.95)' : 'rgba(40, 40, 40, 0.95)'};
+  backdrop-filter: blur(20px);
+  border: 1px solid ${props => props.isActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)'};
   border-radius: ${props => props.isFullscreen ? '0' : '4px'};
   width: ${props => props.isFullscreen ? '100vw' : `${props.width}px`};
-  height: ${props => props.isFullscreen ? 'calc(100vh - 30px)' : `${props.height}px`};
+  height: ${props => props.isFullscreen ? `calc(100vh - ${TOPBAR_HEIGHT}px)` : `${props.height}px`};
   min-width: ${props => props.isFullscreen ? '100vw' : '200px'};
   min-height: ${props => props.isFullscreen ? 'calc(100vh - 30px)' : '150px'};
-  top: ${props => props.isFullscreen ? '30px' : 'auto'};
+  top: ${props => props.isFullscreen ? '0' : 'auto'};
   left: ${props => props.isFullscreen ? '0' : 'auto'};
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease-out;
   box-shadow: ${props => props.isActive 
-    ? '0 0 20px rgba(0,0,0,0.4), 0 0 2px rgba(255,255,255,0.2)' 
-    : '0 0 10px rgba(0,0,0,0.2)'};
+    ? '0 8px 32px rgba(0,0,0,0.3), 0 0 2px rgba(255,255,255,0.1)' 
+    : '0 4px 16px rgba(0,0,0,0.2)'};
   transition: background 0.2s, border 0.2s, box-shadow 0.2s;
   z-index: ${props => props.zIndex};
   animation: ${fadeIn} 0.2s ease-out;
+  margin-top: ${props => props.isFullscreen ? `${TOPBAR_HEIGHT}px` : 'auto'};
 `;
 
 const TitleBar = styled.div<{ isActive: boolean }>`
-  background: ${props => props.isActive ? '#505050' : '#444'};
-  padding: 8px;
+  background: ${props => props.isActive ? 'rgba(60, 60, 60, 0.95)' : 'rgba(50, 50, 50, 0.95)'};
+  padding: 8px 12px;
+  height: 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -92,17 +95,67 @@ const WindowButton = styled.button<{ variant?: 'close' | 'minimize' | 'fullscree
   }};
   border: none;
   color: transparent;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.7;
   transition: all 0.2s;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
 
   &:hover {
     opacity: 1;
     transform: scale(1.1);
     color: ${props => props.variant === 'close' ? '#450000' : '#654200'};
+  }
+
+  &:hover::before {
+    opacity: 1;
+    content: ${props => {
+      switch (props.variant) {
+        case 'close': return '"×"';
+        case 'minimize': return '"−"';
+        case 'fullscreen': return '"+"';
+        default: return '""';
+      }
+    }};
+    color: #000;
+    font-size: 10px;
+  }
+`;
+
+const DragOverlay = styled.div<{ isVisible: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 255, 0.1);
+  pointer-events: none;
+  opacity: ${props => props.isVisible ? 1 : 0};
+  z-index: 9999;
+  transition: opacity 0.2s;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: rgba(0, 0, 255, 0.2);
   }
 `;
 
@@ -144,6 +197,8 @@ const Window: React.FC<WindowProps> = ({
     position: { x: number; y: number };
     dimensions: { width: number; height: number };
   } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState({ y: 0 });
 
   const onResize = (e: React.SyntheticEvent, { size }: { size: { width: number; height: number } }) => {
     setDimensions(size);
@@ -166,14 +221,92 @@ const Window: React.FC<WindowProps> = ({
     }
   };
 
-  const getBounds = () => {
-    return {
-      left: 0,
-      right: Math.max(0, window.innerWidth - dimensions.width),
-      top: TOPBAR_HEIGHT,
-      bottom: Math.max(0, window.innerHeight - dimensions.height - TASKBAR_HEIGHT)
-    };
+  const getBounds = () => ({
+    left: -10,
+    right: window.innerWidth - dimensions.width + 10,
+    top: -10, // Allow dragging above top bar for snapping
+    bottom: window.innerHeight - dimensions.height - TASKBAR_HEIGHT
+  });
+
+  const handleDragStart = (e: any, data: any) => {
+    setIsDragging(true);
+    setDragPosition({ y: data.y });
   };
+
+  const handleDrag = (e: any, data: any) => {
+    setDragPosition({ y: data.y });
+  };
+
+  const handleDragStop = (e: any, data: any) => {
+    setIsDragging(false);
+
+    // Handle fullscreen snap with more forgiving threshold
+    if (data.y <= 10) {
+      setIsFullscreen(true);
+      setPosition({ x: 0, y: TOPBAR_HEIGHT });
+      return;
+    }
+
+    // Handle left snap
+    if (data.x <= 5) {
+      setPosition({ x: 0, y: TOPBAR_HEIGHT });
+      setDimensions({
+        width: window.innerWidth / 2,
+        height: window.innerHeight - TOPBAR_HEIGHT - TASKBAR_HEIGHT
+      });
+      return;
+    }
+
+    // Handle right snap
+    if (data.x >= window.innerWidth - dimensions.width - 5) {
+      setPosition({ x: window.innerWidth - dimensions.width, y: TOPBAR_HEIGHT });
+      setDimensions({
+        width: window.innerWidth / 2,
+        height: window.innerHeight - TOPBAR_HEIGHT - TASKBAR_HEIGHT
+      });
+      return;
+    }
+
+    // Update position normally if no snap, but ensure window stays below top bar
+    setPosition({ 
+      x: data.x, 
+      y: data.y < TOPBAR_HEIGHT ? TOPBAR_HEIGHT : data.y
+    });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isActive) return;
+
+      // Windows key + Arrow shortcuts
+      if (e.metaKey || e.ctrlKey) {
+        switch (e.key) {
+          case 'ArrowUp':
+            toggleFullscreen();
+            break;
+          case 'ArrowLeft':
+            setIsFullscreen(false);
+            setPosition({ x: 0, y: TOPBAR_HEIGHT });
+            setDimensions({
+              width: window.innerWidth / 2,
+              height: window.innerHeight - TOPBAR_HEIGHT - TASKBAR_HEIGHT
+            });
+            break;
+          case 'ArrowRight':
+            setIsFullscreen(false);
+            setPosition({ x: window.innerWidth / 2, y: TOPBAR_HEIGHT });
+            setDimensions({
+              width: window.innerWidth / 2,
+              height: window.innerHeight - TOPBAR_HEIGHT - TASKBAR_HEIGHT
+            });
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isActive]);
 
   const windowContent = (
     <WindowContainer 
@@ -200,26 +333,31 @@ const Window: React.FC<WindowProps> = ({
   );
 
   return (
-    <Draggable
-      handle=".title-bar"
-      position={isFullscreen ? { x: 0, y: 30 } : position}
-      onDrag={onDrag}
-      bounds={getBounds()}
-      onMouseDown={onFocus}
-      disabled={isFullscreen}
-    >
-      {isFullscreen ? windowContent : (
-        <Resizable
-          width={dimensions.width}
-          height={dimensions.height}
-          onResize={onResize}
-          minConstraints={[200, 150]}
-          maxConstraints={[window.innerWidth - 100, window.innerHeight - 130]}
-        >
-          {windowContent}
-        </Resizable>
-      )}
-    </Draggable>
+    <>
+      <DragOverlay isVisible={isDragging && dragPosition.y < 10} />
+      <Draggable
+        handle=".title-bar"
+        position={isFullscreen ? { x: 0, y: 0 } : position} // Ensure exact positioning
+        onStart={handleDragStart}
+        onDrag={handleDrag}
+        onStop={handleDragStop}
+        bounds={getBounds()}
+        onMouseDown={onFocus}
+        disabled={isFullscreen}
+      >
+        {isFullscreen ? windowContent : (
+          <Resizable
+            width={dimensions.width}
+            height={dimensions.height}
+            onResize={onResize}
+            minConstraints={[200, 150]}
+            maxConstraints={[window.innerWidth - 100, window.innerHeight - 130]}
+          >
+            {windowContent}
+          </Resizable>
+        )}
+      </Draggable>
+    </>
   );
 };
 
